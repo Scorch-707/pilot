@@ -50,7 +50,7 @@
 			<div class="col-sm-3">
 				<div class="form-group">
 					<label for="vat">Vat Rate:</label>
-					<input type="text" class="form-control" id="vat" value="">
+					<input type="text" class="form-control" id="vat" value="{{ $vat[0]->rates }}">
 				</div>
 			</div>
 			<div class="col-sm-4">
@@ -273,7 +273,7 @@
 			console.log(rev_tax_value);
 			$.ajax({
 				method: 'POST',
-				url: '{{ route("billing.store") }}',
+				url: '{{ route("billingrevenue.store") }}',
 				data: {
 					'_token' : $('input[name=_token]').val(),
 					'so_head_id' : so_head_id,
@@ -285,10 +285,10 @@
 					'description' : rev_description_value,
 					'amount' : rev_amount_value,
 					'tax' : rev_tax_value,
-					'bi_head_id' : $('#soHead_id').val(),
+					'bi_head_id' : {{ $bills[0]->id }},
 				},
 				success: function (data){
-					alert("Saved");
+					location.reload();
 				}
 			})
 		}
@@ -301,7 +301,7 @@
 			console.log(exp_tax_value);
 			$.ajax({
 				method: 'POST',
-				url: '{{ route("billing.store") }}',
+				url: '{{ route("billingexpense.store") }}',
 				data: {
 					'_token' : $('input[name=_token]').val(),
 					'so_head_id' : so_head_id,
@@ -313,10 +313,10 @@
 					'description' : exp_description_value,
 					'amount' : exp_amount_value,
 					'tax' : exp_tax_value,
-					'bi_head_id' : $('#soHead_id').val(),
+					'bi_head_id' : {{ $bills[0]->id }},
 				},
 				success: function (data){
-					alert("Saved");
+					location.reload();
 				}
 			})
 		}

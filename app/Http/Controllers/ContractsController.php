@@ -57,7 +57,7 @@ class ContractsController extends Controller
 
         }
         else{
-            $desc_array = explode("<br/>", $description->description);
+            $desc_array = explode("<br /><br />", $description->description);
             array_pop($desc_array);
         }
 
@@ -153,6 +153,36 @@ class ContractsController extends Controller
         return redirect('/trucking/contracts');
     }
 }
+
+public function draft_contract(Request $request)
+{
+
+    try
+    {
+
+
+        $consignees = \App\Consignee::all();
+        $provinces = \App\LocationProvince::all();
+
+        $contract = DB::table('contract_headers')
+        ->select('contract_headers.id', 'dateEffective', 'dateExpiration', 'specificDetails','isFinalize', 'consignees_id', 'companyName' , DB::raw('CONCAT(firstName, " ", lastName) AS name'))
+        ->join('consignees AS B', 'consignees_id', '=', 'B.id')
+        ->where('contract_headers.id', '=', $request->contract_id)
+        ->get();
+
+        $desc_array = explode('<br /><br />', $contract[0]->specificDetails);
+        array_pop($desc_array);
+
+
+        return view('/trucking.contract_draft', compact(['contract','desc_array','consignees','provinces']));
+
+    }
+    catch(Exception $e){
+        return redirect('/trucking/contracts');
+    }
+
+}
+
 public function amend_contract(Request $request)
 {
    try
@@ -178,7 +208,7 @@ public function amend_contract(Request $request)
     ->orderBy('created_at', 'DESC')
     ->get();
 
-    $terms = explode('<br />', $contract[0]->specificDetails);
+    $terms = explode('<br /><br />', $contract[0]->specificDetails);
     array_pop($terms);
 
 
@@ -221,6 +251,17 @@ public function update(Request $request, $id){
         $contract->specificDetails = $request->specificDetails;
 
         $contract->save();
+
+        return $contract;
+
+        break;
+
+        case '4':
+        $contract = ContractHeader::findOrFail($request->contract_id);
+        $contract->dateEffective = $request->dateEffective;
+        $contract->dateExpiration = $request->dateExpiration;
+        $contract->specificDetails = $request->specificDetails;
+        $contract->isFinalize = $request->isFinalize;
 
         return $contract;
 

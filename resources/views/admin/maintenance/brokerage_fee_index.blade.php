@@ -213,8 +213,9 @@
         //$(minimum).attr("disabled", true);
 
         var bftable = $('#bf_table').DataTable({
-            processing: true,
-            serverSide: true,
+            processing: false,
+            serverSide: false,
+            deferRender:true,
             'scrollx': true,
             ajax: 'http://localhost:8000/admin/bfData',
             columns: [
@@ -256,6 +257,21 @@
             submitHandler: function (form) {
                 return false;
             }
+        });
+
+        $(document).on('click', '.new', function(e){
+            resetErrors();
+            $('.modal-title').text('New Brokerage Fee Range');
+            
+            $('#dateEffective').val("");
+            var now = new Date();
+            var day = ("0" + now.getDate()).slice(-2);
+            var month = ("0" + (now.getMonth() + 1)).slice(-2);
+            var today = now.getFullYear()+"-"+(month)+"-"+(day) ;
+            $('#dateEffective').val(today);
+
+            $('#bfModal').modal('show');
+
         });
 
 
@@ -411,8 +427,6 @@
                             'dateEffective' : $('#dateEffective').val(),
                             'minimum' : minimum_id,
                             'maximum' :maximum_id,
-                            'minimum_id_descrp' : minimum_id_descrp,
-                            'maximum_id_descrp' : maximum_id_descrp,
                             'amount' : amount_value,
                         },
 
@@ -426,7 +440,7 @@
                             $('#minimum').val("0.00");
                             $('#maximum').val("0.00"); 
                             $('#amount').val("0.00");
-                            $('#dateEffective').val("");
+
 
 
                             toastr.options = {

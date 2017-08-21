@@ -101,16 +101,16 @@
 
 													<div class = "form-group input-group" >
 														<span class = "input-group-addon">$</span>
-														<input type = "text" class = "form-control money ipf_minimum_valid"  
-														value ="0.00" name = "minimum" id = "minimum"  data-rule-required="true" readonly="true"  />
+														<input type = "text" class = "form-control ipf_minimum_valid"  
+														value ="0.00" name = "minimum" id = "minimum"  data-rule-required="true" readonly="true"  style="text-align: right" />
 													</div>
 
 												</td>
 												<td>
 													<div class = "form-group input-group">
 														<span class = "input-group-addon">$</span>
-														<input type = "text" class = "form-control money ipf_maximum_valid"  
-														value ="0.00" name = "maximum" id = "maximum"  data-rule-required="true" />
+														<input type = "text" class = "form-control  ipf_maximum_valid"  
+														value ="0.00" name = "maximum" id = "maximum"  data-rule-required="true" style="text-align: right;" />
 													</div>
 												</td>
 
@@ -210,8 +210,9 @@
 		//$(minimum).attr("disabled", true);
 
 		var ipftable = $('#ipf_table').DataTable({
-			processing: true,
-			serverSide: true,
+			processing: false,
+			serverSide: false,
+			deferRender: true,
 			'scrollx': true,
 			ajax: 'http://localhost:8000/admin/ipfData',
 			columns: [
@@ -312,8 +313,10 @@
 
 				$('#ipf_parent_table').append(ipf_row);
 
-				for(var i = 0; i < minimum.length; i++){
+				for(var i = 0; i <= minimum.length; i++){
 					minimum[i+1].value = parseFloat(maximum[i].value) + 0.01;
+					maximum[i+1].value = parseFloat(minimum[i+1].value) + 1;
+
 				}
 			}
 
@@ -335,10 +338,6 @@
 			$(".ipf_minimum_valid").each(function(){
 				if($(this).val() != ""){
 					$(this).css('border-color', 'green');
-
-					for(var i = 0; i < minimum.length; i++){
-						minimum[i+1].value = parseFloat(maximum[i].value) + 0.01;
-					}
 				}
 				else{
 					$(this).css('border-color', 'red');
@@ -414,7 +413,10 @@
 				if(title == "New Import Processing Fee Range")
 				{
 					console.log('min' + minimum_id);	
-					console.log(maximum_id);	
+					console.log('max' + maximum_id);
+					minimum_unmask = [];
+
+
 					$.ajax({
 						type: 'POST',
 						url:  '/admin/ipf_fee',
@@ -423,8 +425,6 @@
 							'dateEffective' : $('#dateEffective').val(),
 							'minimum' : minimum_id,
 							'maximum' :maximum_id,
-							'minimum_id_descrp' : minimum_id_descrp,
-							'maximum_id_descrp' : maximum_id_descrp,
 							'amount' : amount_value,
 						},
 

@@ -16,16 +16,16 @@
 				<table class = "table-responsive table" id = "vtype_table">
 					<thead>
 						<tr>
-							<td style="width: 5%;">
-								No.
-							</td>
 							<td style="width: 30%;">
 								Name
+							</td>
+							<td style="width: 10%;">
+								With Container
 							</td>
 							<td style="width: 40%;">
 								Description
 							</td>
-							<td style="width: 25%;">
+							<td style="width: 15%;">
 								Actions
 							</td>
 						</tr>
@@ -50,13 +50,20 @@
 							<div class="form-group required">
 								<label class = "control-label">Name: </label>
 								<input type = "text" class = "form-control" name = "name" id = "name" required />
-							</div>		
+							</div>	
+							<div class="form-group required">
+								<label class = "control-label">With Container: </label>
+								<input type="radio" name="withContainer" value="0" > With
+								<input type="radio" name="withContainer" value="1"> Without
+							</div>	
 							<div class="form-group">
 								<label class = "control-label">Description: </label>
 								<textarea class = "form-control" name = "description" id = "description"></textarea>
 							</div>
+							<small style = "color:red; text-align: left"><i>All field(s) with (*) are required.</i></small>
 						</div>
 						<div class="modal-footer">
+
 							<input id = "btnSave" type = "submit" class="btn btn-success" value = "Save" />
 							<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>				
 						</div>
@@ -94,13 +101,13 @@
 @push('styles')
 <style>
 	.class-vehicle-type{
-		border-left: 10px solid #2ad4a5;
+		border-left: 10px solid #8ddfcc;
 		background-color:rgba(128,128,128,0.1);
 		color: #fff;
 	}
 	.maintenance
 	{
-		border-left: 10px solid #2ad4a5;
+		border-left: 10px solid #8ddfcc;
 		background-color:rgba(128,128,128,0.1);
 		color: #fff;
 	}
@@ -111,6 +118,7 @@
 	var data;
 	var temp_name = null;
 	var temp_desc = null;
+	var temp_withContainer = null;
 	$(document).ready(function(){
 		var vtable = $('#vtype_table').DataTable({
 			scrollX: true,
@@ -118,13 +126,25 @@
 			serverSide: true,
 			ajax: '{{ route("vt.data") }}',
 			columns: [
-			{ data: 'id' },
 			{ data: 'name' },
-			{ data: 'description' },
-			{ data: 'action', orderable: false, searchable: false }
+			{ data: 'withContainer',
+			"render" : function( data, type, full ) {
+				return formatWithContainer(data); }},
+				{ data: 'description' },
+				{ data: 'action', orderable: false, searchable: false }
 
-			],	"order": [[ 0, "desc" ]],
-		});
+				],	"order": [[ 0, "asc" ]],
+			});
+
+		function formatWithContainer(n) { 
+
+			if (n === 0){
+				return "with ";
+			}else{
+				return "without ";
+			}
+
+		} 
 
 		$("#commentForm").validate({
 			rules: 
@@ -134,18 +154,22 @@
 					required: true,
 					minlength: 3,
 					maxlength: 50,
+					normalizer: function(value) {
+						value = value.replace("something", "new thing");
+						return $.trim(value)
+					},
+					regex: /^[A-Za-z ]+$/,
 				},
 
 				description:
 				{
 					maxlength: 50,
+					regex: /^[A-Za-z0-9-',. ]+$/,
+
 				},
 
 			},
-			onkeyup: false, 
-			submitHandler: function (form) {
-				return false;
-			}
+			onkeyup: function(element) {$(element).valid()}, 
 		});
 		$(document).on('click', '.new', function(e){
 			resetErrors();
@@ -162,9 +186,11 @@
 
 			$('#description').val(data.description);
 			$('#name').val(data.name);
+			$('[name=withContainer].checked').val(data.withContainer);
 
 			temp_name = data.name;
 			temp_desc = data.description;
+			temp_withContainer = data.withContainer;
 
 			$('.modal-title').text('Edit Vehicle Type');
 			$('#vtModal').modal('show');
@@ -213,7 +239,7 @@
 			})
 		});
 
-
+		
 		$('#btnSave').on('click', function(e){
 			e.preventDefault();
 			var title = $('.modal-title').text();
@@ -234,6 +260,7 @@
 							'_token' : $('input[name=_token]').val(),
 							'name' : $('#name').val(),
 							'description' : $('#description').val(),
+							'withContainer':$('input[name=withContainer]:checked').val(),
 						},
 						success: function (data)
 						{
@@ -243,55 +270,54 @@
 								$('#description').val("");
 								$('.modal-title').text('New Vehicle Type');
 
-					//Show success
 
-					toastr.options = {
-						"closeButton": false,
-						"debug": false,
-						"newestOnTop": false,
-						"progressBar": false,
-						"rtl": false,
-						"positionClass": "toast-bottom-right",
-						"preventDuplicates": false,
-						"onclick": null,
-						"showDuration": 300,
-						"hideDuration": 1000,
-						"timeOut": 2000,
-						"extendedTimeOut": 1000,
-						"showEasing": "swing",
-						"hideEasing": "linear",
-						"showMethod": "fadeIn",
-						"hideMethod": "fadeOut"
-					}
-					toastr["success"]("Record addded successfully");
+								toastr.options = {
+									"closeButton": false,
+									"debug": false,
+									"newestOnTop": false,
+									"progressBar": false,
+									"rtl": false,
+									"positionClass": "toast-bottom-right",
+									"preventDuplicates": false,
+									"onclick": null,
+									"showDuration": 300,
+									"hideDuration": 1000,
+									"timeOut": 2000,
+									"extendedTimeOut": 1000,
+									"showEasing": "swing",
+									"hideEasing": "linear",
+									"showMethod": "fadeIn",
+									"hideMethod": "fadeOut"
+								}
+								toastr["success"]("Record addded successfully");
 
-					$('#name').val("");
-					$('#description').val("");
-					$('#btnSave').removeAttr('disabled');
-					
-				}
-				else{
-					resetErrors();
-					var invdata = JSON.parse(data);
-					$.each(invdata, function(i, v) {
-						console.log(i + " => " + v);
-						var msg = '<label class="error" for="'+i+'">'+v+'</label>';
-						$('input[name="' + i + '"], select[name="' + i + '"]').addClass('inputTxtError').after(msg);
+								$('#name').val("");
+								$('#description').val("");
+								$('#btnSave').removeAttr('disabled');
+
+							}
+							else{
+								resetErrors();
+								var invdata = JSON.parse(data);
+								$.each(invdata, function(i, v) {
+									console.log(i + " => " + v);
+									var msg = '<label class="error" for="'+i+'">'+v+'</label>';
+									$('input[name="' + i + '"], select[name="' + i + '"]').addClass('inputTxtError').after(msg);
 
 
-					});
-					$('#btnSave').removeAttr('disabled');
-					
-				}
-			},
-			
-		})
+								});
+								$('#btnSave').removeAttr('disabled');
+
+							}
+						},
+
+					})
 				}
 			}
 			else
 			{
-				if($('#name').valid() && $('#description').valid()){
-					if($('#name').val() === temp_name && $('#description').val() === temp_desc){
+				if($('#name').valid() && $('#description').valid() ){
+					if($('#name').val() === temp_name && $('#description').val() === temp_desc && $('input[name=withContainer]:checked').val() === temp_withContainer){
 						$('#name').val("");
 						$('#description').val("");
 						$('#btnSave').removeAttr('disabled');
@@ -307,6 +333,7 @@
 								'_token' : $('input[name=_token]').val(),
 								'name' : $('#name').val(),
 								'description' : $('#description').val(),
+								'withContainer':$('input[name=withContainer]:checked').val(),
 							},
 							success: function (data)
 							{
@@ -316,55 +343,53 @@
 									$('#description').val("");
 									$('.modal-title').text('New Vehicle Type');
 
-					//Show success
+									toastr.options = {
+										"closeButton": false,
+										"debug": false,
+										"newestOnTop": false,
+										"progressBar": false,
+										"rtl": false,
+										"positionClass": "toast-bottom-right",
+										"preventDuplicates": false,
+										"onclick": null,
+										"showDuration": 300,
+										"hideDuration": 1000,
+										"timeOut": 2000,
+										"extendedTimeOut": 1000,
+										"showEasing": "swing",
+										"hideEasing": "linear",
+										"showMethod": "fadeIn",
+										"hideMethod": "fadeOut"
+									}
+									toastr["success"]("Record updated successfully");
 
-					toastr.options = {
-						"closeButton": false,
-						"debug": false,
-						"newestOnTop": false,
-						"progressBar": false,
-						"rtl": false,
-						"positionClass": "toast-bottom-right",
-						"preventDuplicates": false,
-						"onclick": null,
-						"showDuration": 300,
-						"hideDuration": 1000,
-						"timeOut": 2000,
-						"extendedTimeOut": 1000,
-						"showEasing": "swing",
-						"hideEasing": "linear",
-						"showMethod": "fadeIn",
-						"hideMethod": "fadeOut"
-					}
-					toastr["success"]("Record updated successfully");
-
-					$('#name').val("");
-					$('#description').val("");
-					$('#btnSave').removeAttr('disabled');
-					
-				}
-				else{
-					resetErrors();
-					var invdata = JSON.parse(data);
-					$.each(invdata, function(i, v) {
-						console.log(i + " => " + v);
-						var msg = '<label class="error" for="'+i+'">'+v+'</label>';
-						$('input[name="' + i + '"], select[name="' + i + '"]').addClass('inputTxtError').after(msg);
+									$('#name').val("");
+									$('#description').val("");
+									$('#btnSave').removeAttr('disabled');
+									
+								}
+								else{
+									resetErrors();
+									var invdata = JSON.parse(data);
+									$.each(invdata, function(i, v) {
+										console.log(i + " => " + v);
+										var msg = '<label class="error" for="'+i+'">'+v+'</label>';
+										$('input[name="' + i + '"], select[name="' + i + '"]').addClass('inputTxtError').after(msg);
 
 
-					});
-					$('#btnSave').removeAttr('disabled');
-					
-				}
-			},
-			
-		})
+									});
+									$('#btnSave').removeAttr('disabled');
+									
+								}
+							},
+							
+						})
 					}
 				}
 			}
 		});
 
-	});
+});
 
 function resetErrors() {
 	$('form input, form select').removeClass('inputTxtError');
