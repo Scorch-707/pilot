@@ -1,11 +1,34 @@
 
 @extends('layouts.maintenance')
+@push('styles')
+<style>
+	.class-cds-fee
+	{
+		border-left: 10px solid #8ddfcc;
+		background-color:rgba(128,128,128,0.1);
+		color: #fff;
+	}
+	.maintenance
+	{
+		border-left: 10px solid #8ddfcc;
+		background-color:rgba(128,128,128,0.1);
+		color: #fff;
+	}
+</style>
+@endpush
 @section('content')
 
 <div class = "container-fluid">
 	<div class = "row">
 		<h2>&nbsp;Maintenance | Container Delivery System Fee</h2>
 		<hr>
+		<h5>Current CDS Fee: Php 
+			@if($cds_fee[0]->fee != null)
+			{{ number_format((float)$cds_fee[0]->fee, 2) }}
+			@else
+			0.000000
+			@endif
+		</h5>
 		<div class = "col-md-3 col-md-offset-9">
 			<button  class="btn btn-info btn-md new" data-toggle="modal" data-target="#cdsModal" style = "width: 100%;">New CDS Fee</button>
 		</div>
@@ -18,16 +41,10 @@
 					<thead>
 						<tr>
 							<td>
-								No.
-							</td>
-							<td>
 								Fee
 							</td>
 							<td>
 								Date Effective
-							</td>
-							<td>
-								Created at
 							</td>
 							<td>
 								Actions
@@ -55,7 +72,7 @@
 								<label class = "control-label">Fee</label>
 								<div class = "form-group input-group " >
 									<span class = "input-group-addon">Php</span>
-									<input type = "text" class = "form-control money" name = "fee" id = "fee"  data-rule-required="true" value="0.00" />
+									<input type = "text"   class = "form-control money" name = "fee" id = "fee"  data-rule-required="true" value="0.00" />
 								</div>
 								
 
@@ -93,7 +110,7 @@
 						</div>
 						<div class="modal-footer">
 							<button class = "btn btn-danger	" id = "btnDelete" >Deactivate</button>
-							<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
 							
 						</div>
 					</div>
@@ -103,22 +120,7 @@
 	</section>
 </div>
 @endsection
-@push('styles')
-<style>
-	.class-cds-fee
-	{
-		border-left: 10px solid #8ddfcc;
-		background-color:rgba(128,128,128,0.1);
-		color: #fff;
-	}
-	.maintenance
-	{
-		border-left: 10px solid #8ddfcc;
-		background-color:rgba(128,128,128,0.1);
-		color: #fff;
-	}
-</style>
-@endpush
+
 @push('scripts')
 <script type="text/javascript">
 $('#collapse2').addClass('in');
@@ -126,16 +128,15 @@ $('#collapse2').addClass('in');
 	$(document).ready(function(){
 
 		var cdstable = $('#cds_table').DataTable({
-			processing: true,
-			serverSide: true,
+			processing: false,
+			serverSide: false,
+			deferRender:true,
 			ajax: 'http://localhost:8000/admin/cdsData',
 			columns: [
-			{ data: 'id'},
 			{ data: 'fee',
 			"render" : function( data, type, full ) {
 				return formatNumber(data); } },                              
 				{ data: 'dateEffective' },
-				{ data: 'created_at'},
 				{ data: 'action', orderable: false, searchable: false }
 
 				],	"order": [[ 0, "desc" ]],
@@ -165,8 +166,7 @@ $('#collapse2').addClass('in');
 			resetErrors();
 			$('.modal-title').text('New CDS Fee');
 			$('#cdsModal').modal('show');
-			$('#fee').val("");
-			$('#dateEffective').val("");
+			$('#fee').val("0.00");
 			var now = new Date();
 			var day = ("0" + now.getDate()).slice(-2);
 			var month = ("0" + (now.getMonth() + 1)).slice(-2);

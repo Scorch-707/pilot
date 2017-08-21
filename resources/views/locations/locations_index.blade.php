@@ -2,10 +2,10 @@
 @section('content')
 <div class = "container-fluid">
 	<div class = "row">
-		<h3><img src="/images/bar.png">   Locations</h3>
+		<h2>&nbsp; Locations</h2>
 		<hr>
 		<div class = "col-md-3 col-md-offset-9">
-			<button  class="btn btn-info btn-md new"  style = "width: 100%;">New Location</button>
+			<button  class="btn but btn-md new"  style = "width: 100%;">New Location</button>
 		</div>
 	</div>
 	<br />
@@ -19,7 +19,7 @@
 								Name
 							</td>
 							<td style="width: 30%;">
-								Address
+								Block No./Lot No./Street
 							</td>
 							<td style="width: 15%;">
 								City
@@ -58,7 +58,7 @@
 								</div>
 							</div>
 							<div class="form-group required">
-								<label class = "control-label col-md-3">Address: </label>
+								<label class = "control-label col-md-3">Block No./Lot No./Street: </label>
 								<div class = "col-md-9">
 									<textarea class = "form-control" id = "address" name = "address"></textarea>
 								</div>
@@ -125,15 +125,15 @@
 <style>
 	.location
 	{
-		border-left: 10px solid #2ad4a5;
+		border-left: 10px solid #8ddfcc;
 		background-color:rgba(128,128,128,0.1);
 		color: #fff;
 	}
 </style>
 @endpush
-
 @push('scripts')
 <script type="text/javascript">
+	$('#collapse1').addClass('in');
 	var location_id = null;
 	var arr_provinces =[
 	@forelse($provinces as $province)
@@ -207,8 +207,8 @@
 		})
 		$(document).on('click', '.btnSave', function(e){
 			e.preventDefault();
-			if($('#modal-title').text() == "New Location"){
-
+			if($('.modal-title').text() == "New Location"){
+			
 				$.ajax({
 					type: 'POST',
 					url: "{{ route('location.index')}}",

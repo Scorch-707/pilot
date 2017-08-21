@@ -5,7 +5,7 @@
 		<h2>&nbsp;Maintenance | Exchange Rate</h2>
 		<hr>
 		<h5>Current Exchange Rate: Php 
-			@if($exchange_rate != null)
+			@if($exchange_rate[0]->rate != null)
 			{{ number_format((float)$exchange_rate[0]->rate, 5) }}
 			@else
 			0.000000
@@ -22,9 +22,6 @@
 				<table class = "table-responsive table" id = "er_table">
 					<thead>
 						<tr>
-							<td>
-								No.
-							</td>
 							<td>
 								Rate
 							</td>
@@ -146,17 +143,13 @@
 			deferRender: true,
 			ajax: 'http://localhost:8000/admin/erData',
 			columns: [
-			{ data: 'id' },
-			{ data: 'rate' ,
-			"render" : function( data, type, full ) {
-				return formatNumber(data); } 
-			},
+			{ data: 'rate' },
 			{ data: 'description' },
 			{ data: 'dateEffective' },
 			{ data: 'created_at'},
 			{ data: 'action', orderable: false, searchable: false }
 
-			],	"order": [[ 0, "desc" ]],
+			],	"order": [[ 2, "desc" ]],
 		});
 
 
@@ -187,9 +180,7 @@
 			$('.modal-title').text('New Exchange Rate');
 			$('#description').val("");
 			$('rate').val("");
-			$('dateEffective').val("");
 			var now = new Date();
-
 			var day = ("0" + now.getDate()).slice(-2);
 			var month = ("0" + (now.getMonth() + 1)).slice(-2);
 			var today = now.getFullYear()+"-"+(month)+"-"+(day) ;
@@ -200,11 +191,11 @@
 		});
 		$(document).on('click', '.edit',function(e){
 			resetErrors();
-			var ct_id = $(this).val();
+			var er_id = $(this).val();
 			data = ertable.row($(this).parents()).data();
+			$('#dateEffective').val(data.dateEffective);
 			$('#description').val(data.description);
 			$('#rate').val(data.rate);
-			$('#dateEffective').val(data.dateEffective);
 			$('.modal-title').text('Edit Exchange Rate');
 			$('#erModal').modal('show');
 		});
@@ -359,7 +350,6 @@
 						$('#erModal').modal('hide');
 						$('#description').val("");
 						$('rate').val("");
-						$('dateEffective').val("");
 						$('.modal-title').text('New Exchange Rate');
 					}
 				})

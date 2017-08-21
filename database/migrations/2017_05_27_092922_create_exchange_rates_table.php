@@ -18,11 +18,13 @@ class CreateExchangeRatesTable extends Migration
             $table->string('description', 150)->nullable();
             $table->decimal('rate', 10, 7);
             $table->boolean('currentRate');
-            $table->dateTime('dateEffective');
+            $table->date('dateEffective');
             $table->timestamps();
             $table->softDeletes();
 
         });
+
+        DB::statement('INSERT INTO exchange_rates (`rate`, `currentRate`, `dateEffective`, `created_at`, `updated_at`) VALUES (0.0, 1, NOW(), NOW(), NOW())');
     }
 
     /**

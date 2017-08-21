@@ -1,11 +1,11 @@
 @extends('layouts.app')
 @section('content')
+<h2>&nbsp;Consignee</h2>
+<hr>
 <div class = "container-fluid">
 	<div class = "row">
-		<h3><img src="/images/bar.png"> Consignee</h3>
-		<hr>
 		<div class = "col-md-3 col-md-offset-9">
-			<button  class="btn btn-info btn-md new-consignee" style = "width: 100%;">New Consignee</button>
+			<button  class="btn but btn-md new-consignee" style = "width: 100%;">New Consignee</button>
 		</div>
 	</div>
 	<br />
@@ -54,7 +54,7 @@
 						<div id="con_collapse" class="collapse in">
 							<ul class="nav nav-tabs">
 								<li class = "active" ><a data-toggle="tab" href="#new_con">Basic Information</a></li>
-								<li><a data-toggle="tab" href="#physical_address">Physical Address</a></li>
+								<li><a data-toggle="tab" href="#physical_address">Current Address</a></li>
 								<li><a data-toggle="tab" href="#billing_address">Billing Address</a></li>
 							</ul>
 
@@ -63,7 +63,7 @@
 									<br />
 									<div class = "form-horizontal">
 										<div class="form-group required">
-											<label class="control-label col-sm-3" for="phy_address">Address:</label>
+											<label class="control-label col-sm-3" for="phy_address">Block/Lot/Street:</label>
 											<div class="col-sm-8">          
 												<input type="text" class="form-control" name = "phy_address" id="phy_address" placeholder="Enter Address">
 											</div>
@@ -100,9 +100,9 @@
 										<div class="form-group required">
 											<label class="control-label col-sm-4" for="same_billing_address">Same billing address:</label>
 											<div class="col-md-8">          
-												<label class="switch">
+												
 													<input type="checkbox" class = "checkbox same_billing_address">
-												</label>
+												
 											</div>
 										</div>
 									</div>
@@ -242,7 +242,7 @@
 <style>
 	.consignee
 	{
-		border-left: 10px solid #2ad4a5;
+		border-left: 10px solid #8ffdcc;
 		background-color:rgba(128,128,128,0.1);
 		color: #fff;
 	}
@@ -251,6 +251,7 @@
 
 @push('scripts')
 <script type="text/javascript">
+	$('#collapse1').addClass('in');
 	$(document).ready(function(){
 		var cstable = $('#cs_table').DataTable({			
 			responsive: true,
@@ -355,7 +356,7 @@
 
 		})
 
-		$(document).on('click', '.selectConsignee', function(e){
+		$(document).on('click', '.edit', function(e){
 			e.preventDefault();
 			console.log($(this).closest('tr').find('.businessStyle').val());
 			$('#chModal').modal('show');
@@ -368,6 +369,12 @@
 			$('#contactNumber').val($(this).closest('tr').find('.contactNumber').val());
 			$('#businessStyle').val($(this).closest('tr').find('.businessStyle').val());
 			$('#TIN').val($(this).closest('tr').find('.TIN').val());
+
+			$('#phy_address').val($(this).closest('tr').find('.address').val());
+			$('#phy_zip').val($(this).closest('tr').find('.zip').val());
+			$('#bill_address').val($(this).closest('tr').find('.b_address').val());
+			$('#bill_zip').val($(this).closest('tr').find('.b_zip').val());
+			
 		})
 
 		$(document).on('click', '.save-consignee-information', function(e){
@@ -428,6 +435,7 @@
 							$("#basic-information-heading").html('<h5 id = "basic-information-heading">Basic Information <button class = "btn btn-sm btn-info changeConsignee 	pull-right">Change Consignee</button></h5>');
 
 							cstable.ajax.reload();
+							$('#chModal').modal('hide');
 							$('#firstName').val("");
 							$('#middleName').val("");
 							$('#lastName').val("");

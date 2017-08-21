@@ -53,7 +53,7 @@ Route::resource('/admin/area', 'AreasController');
 Route::resource('/admin/billing', 'BillingsController');
 Route::resource('/admin/brokerage_fee', 'BrokerageFeesController');
 Route::resource('/admin/cds_fee','CdsFeesController');
-Route::resource('/admin/ipf_fee','IpfFeesController');
+Route::resource('/admin/ipf_fee','ImportProcessingFeesController');
 Route::resource('/admin/standard_arearates','StandardAreaRatesController');
 Route::resource('/admin/vat_rate','VatRatesController');
 Route::resource('/admin/bank_account','BankAccountsController');
@@ -158,6 +158,9 @@ Route::get('/admin/lcData', 'DatatablesController@lc_datatable')->name('lc.data'
 Route::get('pdfview','PaymentsController@pdfview');
 
 //Skipper
+//Orders
+Route::resource('/orders', 'OrdersController');
+
 //Payments
 Route::resource('/payment', 'PaymentsController');
 Route::get('admin/pso_head', 'DatatablesController@pso_head_datatable')->name('pso_head.data');
@@ -172,10 +175,13 @@ Route::get('admin/invoice/{so_head_id}', 'BillingDetailsController@billing_invoi
 // Route::get('/bill/display/{id}', 'BillingDetailsController@display_bill');
 Route::get('/billing/{id}/total', 'DatatablesController@totalbillings')->name('totalbill.data');
 Route::get('billing', 'BillingDetailsController@index')->name('view.index');
-Route::get('admin/so_head', 'DatatablesController@so_head_datatable')->name('so_head.data');
+Route::get('admin/brso_head', 'DatatablesController@brso_head_datatable')->name('brso_head.data');
+Route::get('admin/trso_head', 'DatatablesController@trso_head_datatable')->name('trso_head.data');
 Route::get('admin/expenses/{id}', 'DatatablesController@expenses_datatable')->name('expenses.data');
 Route::get('admin/revenue/{id}', 'DatatablesController@revenue_datatable')->name('revenue.data');
 Route::get('admin/paybills/{id}', 'PaymentsController@payments_table')->name('payments.data');
+Route::resource('/billingrevenue', 'BillingRevenuesController');
+Route::resource('/billingexpense', 'BillingExpensesController');
 
 
 //Maintenance data
@@ -206,6 +212,8 @@ Route::get('/location/{id}/getLocation', 'LocationsController@get_location')->na
 Route::resource('/quotation', 'QuotationsController');
 Route::get('/quotation/{id}/print', 'QuotationsController@print');
 Route::get('/admin/getQuotations', 'DatatablesController@get_quotations')->name('quotation_data');
+//vanessa addition
+Route::resource('admin/quotation_template','QuotationTemplateController');
 
 // Trucking Route
 Route::resource('/trucking/delivery_receipts', 'DeliveryReceiptsController');
@@ -216,6 +224,8 @@ Route::get('admin/{trucking_id}/deliveryData', 'DatatablesController@trucking_de
 Route::get('admin/{vehicle_type}/getVehicles', 'TruckingsController@getVehicles');
 Route::post('/trucking/{trucking_id}/store_delivery', 'TruckingsController@store_delivery');
 Route::put('/trucking/{trucking_id}/update_delivery', 'TruckingsController@update_delivery');
+Route::get('/trucking/{trucking_id}/delivery/{delivery_id}/edit', 'TruckingsController@edit_delivery');
+Route::put('/trucking/{trucking_id}/delivery/{delivery_id}/update_delivery', 'TruckingsController@update_delivery_record');
 Route::put('/trucking/{trucking_id}/update_container/{container_id}', 'TruckingsController@update_container');
 //Delivery Receipt Routes
 Route::get('admin/tr_soData/{type?}/view', 'DatatablesController@trucking_so_datatable')->name('tr_so.data');
@@ -237,8 +247,8 @@ Route::get('/trucking/contracts/consignee_con_details/{contract_id?}', 'Trucking
 Route::get('/trucking/contracts/{contract_id}/show_pdf', 'ContractsController@contract_pdf');
 Route::get('/trucking/contracts/{contract_id}/agreement_pdf', 'ContractsController@agreement_pdf');
 Route::get('/trucking/contracts/{contract_id}/rates', 'DatatablesController@get_contract_details');
+Route::get('/trucking/contracts/{contract_id}/draft', 'ContractsController@draft_contract');
 Route::post('/trucking/contracts/{contract_id}/store_rates', 'ContractsController@store_contract_rates');
-
 
 
 //Vanessa addition
@@ -261,3 +271,11 @@ Route::get('/FullCalendar', 'TruckingsController@show_calendar');
 //Utilities home route
 Route::resource('/admin/utilities', 'UtilitiesController');
 Route::resource('/admin/settings', 'BusinessSettingsController');
+
+
+//Query
+# Active Contracts
+Route::get('queries', 'QueriesController@index')->name('queries.index');
+Route::get('queries/get_active_contract/{status?}', 'DatatablesController@get_active_contract')->name('get_active_contract');
+Route::get('queries/get_pending_deliveries/{status?}', 'DatatablesController@get_pending_deliveries')->name('get_pending_deliveries');
+Route::get('queries/get_unreturned_containers', 'DatatablesController@get_unreturned_containers')->name('get_unreturned_containers');

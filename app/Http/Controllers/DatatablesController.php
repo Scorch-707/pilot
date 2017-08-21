@@ -31,7 +31,7 @@ use Carbon\Carbon;
 class DatatablesController extends Controller
 {
 	public function vt_datatable(){
-		$vtypes = VehicleType::select(['id', 'name','description', 'created_at']);
+		$vtypes = VehicleType::select(['id', 'name','description', 'withContainer', 'created_at']);
 
 		return Datatables::of($vtypes)
 		->addColumn('action', function ($vtype) {
@@ -103,7 +103,7 @@ class DatatablesController extends Controller
 			'<button value = "'. $er->id .'" style="margin-right:10px;" class = "btn btn-md btn-primary edit">Update</button>'.
 			'<button value = "'. $er->id .'" class = "btn btn-md btn-danger deactivate">Deactivate</button>';
 		})
-		->editColumn('id', '{{ $id }}')
+		->editColumn('rate', 'Php {{ $rate }}')
 		->make(true);
 	}
 
@@ -170,7 +170,8 @@ class DatatablesController extends Controller
 	}
 
 	public function consignee_datatable_main(){
-		$consignees = consignee::select(['id', 'firstName', 'middleName','lastName','companyName', 'address', 'email', 'contactNumber','created_at', 'TIN', 'businessStyle']);
+		$consignees = consignee::select(['id', 'firstName', 'middleName','lastName','companyName', 'address','city', 'st_prov', 'zip', 'b_address', 'b_city', 
+			'b_st_prov', 'b_zip', 'email', 'contactNumber','created_at', 'TIN', 'businessStyle']);
 
 		return Datatables::of($consignees)
 
@@ -178,12 +179,20 @@ class DatatablesController extends Controller
 		->editColumn('created_at', '{{ Carbon\Carbon::parse($created_at)->toFormattedDateString() }}')
 		->addColumn('action', function ($consignee){
 			return
-			'<button value = "'. $consignee->id .'" class = "btn btn-md btn-primary selectConsignee ">View</button>'.
+			'<button value = "'. $consignee->id .'" class = "btn btn-md btn-primary but edit">Update</button>
+			<button value = "'. $consignee->id .'" class = "btn btn-md btn-danger deactivate">Deactivate</button>'.
 			'<input type = "hidden" value = "'. $consignee->firstName .'" class = "firstName" />
 			<input type = "hidden" value = "'. $consignee->middleName .'" class = "middleName" />
 			<input type = "hidden" value = "'. $consignee->lastName .'" class = "lastName" />
 			<input type = "hidden" value = "'. $consignee->companyName .'" class = "companyName" />
 			<input type = "hidden" value = "'. $consignee->address .'" class = "address" />
+			<input type = "hidden" value = "'. $consignee->city .'" class = "city" />
+			<input type = "hidden" value = "'. $consignee->st_prov .'" class = "st_prov" />
+			<input type = "hidden" value = "'. $consignee->zip .'" class = "zip" />
+			<input type = "hidden" value = "'. $consignee->b_address .'" class = "b_address" />
+			<input type = "hidden" value = "'. $consignee->b_city .'" class = "b_city" />
+			<input type = "hidden" value = "'. $consignee->b_st_prov .'" class = "b_st_prov" />
+			<input type = "hidden" value = "'. $consignee->b_zip .'" class = "b_zip" />
 			<input type = "hidden" value = "'. $consignee->email .'" class = "email" />
 			<input type = "hidden" value = "'. $consignee->contactNumber .'" class = "contactNumber" />
 			<input type = "hidden" value = "'. $consignee->businessStyle .'" class = "businessStyle" />
@@ -217,12 +226,34 @@ class DatatablesController extends Controller
 		})
 		->make(true);
 	}
-	public function so_head_datatable(){
+	public function brso_head_datatable(){
 		$so_heads = DB::table('consignee_service_order_headers')
 		->join('consignees', 'consignee_service_order_headers.consignees_id', '=', 'consignees.id')
 		->join('consignee_service_order_details', 'consignee_service_order_details.so_headers_id', '=', 'consignee_service_order_headers.id')
 		->join('service_order_types','service_order_types.id','=','consignee_service_order_details.service_order_types_id')
 		->select('consignee_service_order_headers.id', 'companyName','service_order_types.name','paymentStatus', 'consignee_service_order_details.created_at')
+		->where([
+			['service_order_types.name', '=', 'Brokerage'],
+			['paymentStatus', '=', 'U']
+			])
+		->get();
+		return Datatables::of($so_heads)
+		->addColumn('action', function ($so_head) {
+			return
+			'<a href = "/billing/' . $so_head->id . '" style="margin-right:10px; width:100;" class = "btn btn-md but selectCon">Select</a>';
+		})
+		->make(true);
+	}
+	public function trso_head_datatable(){
+		$so_heads = DB::table('consignee_service_order_headers')
+		->join('consignees', 'consignee_service_order_headers.consignees_id', '=', 'consignees.id')
+		->join('consignee_service_order_details', 'consignee_service_order_details.so_headers_id', '=', 'consignee_service_order_headers.id')
+		->join('service_order_types','service_order_types.id','=','consignee_service_order_details.service_order_types_id')
+		->select('consignee_service_order_headers.id', 'companyName','service_order_types.name','paymentStatus', 'consignee_service_order_details.created_at')
+		->where([
+			['service_order_types.name', '=', 'Trucking'],
+			['paymentStatus', '=', 'U']
+			])
 		->get();
 		return Datatables::of($so_heads)
 		->addColumn('action', function ($so_head) {
@@ -260,28 +291,31 @@ class DatatablesController extends Controller
 	public function expenses_datatable(Request $request)
 	{
 		$billing_header =  BillingInvoiceHeader::all()->last();
-		$exps = DB::table('billing_expenses')
-		->join('billing_invoice_headers', 'billing_expenses.bi_head_id', '=', 'billing_invoice_headers.id')
+		$exp = DB::table('billing_expenses')
 		->join('billings', 'billing_expenses.bill_id', '=', 'billings.id')
+		->join('billing_invoice_headers', 'billing_expenses.bi_head_id', '=', 'billing_invoice_headers.id')
+		->join('consignee_service_order_headers', 'billing_invoice_headers.so_head_id', '=', 'consignee_service_order_headers.id')
 		->select('billings.name', 'billing_expenses.description', 'billing_expenses.amount')
-		->where('billing_invoice_headers.so_head_id', '=', $request->id)
+		->where([
+			['billing_invoice_headers.so_head_id', '=', $request->id],
+			['consignee_service_order_headers.paymentStatus', '=', 'U']
+			])
 		->get();
-
-		return Datatables::of($exps)
+		return Datatables::of($exp)
 		->make(true);
 
 		// select b.name, be.description, be.amount from billing_expenses as be left join billing_invoice_headers as bh on be.bi_head_id = bh.id LEFT JOIN billings as b on be.bill_id = b.id where be.bi_head_id = 1
 	}
 	public function revenue_datatable(Request $request)
 	{
-		$billing_header =  BillingInvoiceHeader::all()->last();
-		$exps = DB::table('billing_revenues')
-		->join('billing_invoice_headers', 'billing_revenues.bi_head_id', '=', 'billing_invoice_headers.id')
+		$rev = DB::table('billing_revenues')
 		->join('billings', 'billing_revenues.bill_id', '=', 'billings.id')
+		->join('billing_invoice_headers', 'billing_revenues.bi_head_id', '=', 'billing_invoice_headers.id')
+		->join('consignee_service_order_headers', 'billing_invoice_headers.so_head_id', '=', 'consignee_service_order_headers.id')
 		->select('billings.name', 'billing_revenues.description', 'billing_revenues.amount')
-		->where('billing_invoice_headers.so_head_id', '=', $request->id)
+		->where('billing_revenues.bi_head_id', '=', $request->id)
 		->get();
-		return Datatables::of($exps)
+		return Datatables::of($rev)
 		->make(true);
 	}
 
@@ -321,13 +355,7 @@ class DatatablesController extends Controller
 		->get();
 		return Datatables::of($deliveries)
 		->make(true);
-		// // select c.companyName, dc.shippingLine, dc.portOfCfsLocation, dc.containerVolume, dc.containerNumber, dnc.grossWeight, dh.deliveryDateTime, dc.remarks from delivery_containers as dc 
-		// join delivery_receipt_headers as dh on dc.del_head_id = dh.id 
-		// join delivery_non_container_details as dnc on dnc.del_head_id = dh.id 
-		// join trucking_service_orders as tr on dh.tr_so_id = tr.id 
-		// join consignee_service_order_details as cd on tr.so_details_id = cd.id 
-		// join consignee_service_order_headers as ch on cd.so_headers_id = ch.id 
-		// join consignees as c on ch.consignees_id = c.id
+
 	}
 
 	public function ar_datatable(){
@@ -387,7 +415,7 @@ class DatatablesController extends Controller
 	}
 
 	public function bf_datatable(){
-		$bfs = BrokerageFee::select(['id', 'minimum', 'maximum', 'amount', 'created_at']);
+		$bfs = DB::select("SELECT h.id, h.dateEffective , GROUP_CONCAT(d.minimum ORDER BY d.minimum ASC ) AS minimum, GROUP_CONCAT(d.maximum ORDER BY d.minimum ASC ) AS maximum, GROUP_CONCAT(d.amount ORDER BY d.minimum ASC) AS amount FROM brokerage_fee_headers h INNER JOIN brokerage_fee_details d ON h.id = d.brokerage_fee_headers_id GROUP BY h.id");
 
 		return Datatables::of($bfs)
 		->addColumn('action', function ($bf){
@@ -402,31 +430,52 @@ class DatatablesController extends Controller
 	public function contracts_datatable(){
 		$contract_headers = DB::table('contract_headers')
 		->join('consignees', 'consignees_id', '=', 'consignees.id')
-		->select('contract_headers.id', 'dateEffective', 'dateExpiration', 'companyName', 'contract_headers.created_at')
+		->select('contract_headers.id', 'dateEffective', 'isFinalize', 'dateExpiration', 'companyName', 'contract_headers.created_at')
 		->get();
 		return Datatables::of($contract_headers)
 		->addColumn('status', function ($contract_header){
-			$date_now = Carbon::now();
-			if($date_now->between(Carbon::parse($contract_header->dateEffective), Carbon::parse($contract_header->dateExpiration))){
-				return 'Active';
+			if ($contract_header->isFinalize == 1){
+
+				$date_now = Carbon::now();
+				if($date_now->between(Carbon::parse($contract_header->dateEffective), Carbon::parse($contract_header->dateExpiration))){
+					return 'Active';
+				}
+				else if(Carbon::parse($contract_header->dateEffective)->isPast()){
+					return 'Expired';
+				}
+
+			}else{
+				return 'Draft';
 			}
-			else if(Carbon::parse($contract_header->dateEffective)->isPast()){
-				return 'Expired';
-			}
-			else{
-				return 'Pending';
-			}
+			
+			
 			
 		})
 		->addColumn('action', function ($contract_header){
-			return
-			'<button value = "'. $contract_header->id .'" class = "btn btn-md but view-contract-details">View</button>' .
-			'<button value = "'. $contract_header->id .'" class = "btn btn-md btn-primary amend-contract">Amend</button>' .
-			'<button value = "'. $contract_header->id .'" class = "btn btn-md btn-success print-contract-details">Print</button>';
+			if ($contract_header->isFinalize == 1){
+
+				return
+				'<button value = "'. $contract_header->id .'" class = "btn btn-md but view-contract-details">View</button>' .
+				'<button value = "'. $contract_header->id .'" class = "btn btn-md btn-primary amend-contract">Amend</button>' .
+				'<button value = "'. $contract_header->id .'" class = "btn btn-md btn-success print-contract-details">Print</button>';
+
+			}else{
+				return
+				'<button value = "'. $contract_header->id .'" class = "btn btn-md btn-primary update-draft">Update</button>';
+			}
 		})
 		->editColumn('id', '{{ $id }}')
-		->editColumn('dateEffective', '{{ Carbon\Carbon::parse($dateEffective)->toFormattedDateString() }}')
-		->editColumn('dateExpiration', '{{ Carbon\Carbon::parse($dateExpiration)->toFormattedDateString() }} - {{ Carbon\Carbon::parse($dateExpiration)->diffForHumans() }}')
+		->editColumn('dateEffective', function($contract_header){
+			return $contract_header->dateEffective ? with(new Carbon ($contract_header->dateEffective))->toFormattedDateString() : 'Pending';
+//'{{ Carbon\Carbon::parse($dateExpiration)->toFormattedDateString() }} - {{ Carbon\Carbon::parse($dateExpiration)->diffForHumans() }}'
+		})
+		->editColumn('dateExpiration', function($contract_header){
+
+			return $contract_header->dateExpiration ? with(new Carbon ($contract_header->dateExpiration))->toFormattedDateString()  : 'Pending';
+
+
+
+		})
 		->editColumn('created_at', '{{ Carbon\Carbon::parse($created_at)->toFormattedDateString() }}')
 		->make(true);
 	}
@@ -529,10 +578,20 @@ class DatatablesController extends Controller
 			return Carbon::parse($deliveries->pickupDateTime)->format('F j, Y h:i:s A');
 		})
 		->addColumn('action', function ($delivery){
-			return
-			"<button class = 'btn btn-primary view_delivery'>View</button>" . 
-			"<button class = 'btn but select-delivery' data-toggle = 'modal' data-target = '#deliveryModal'>Status</button>" . 
-			"<input type = 'hidden' value = '" . $delivery->id . "' class = 'delivery-id' />";
+			if($delivery->status == 'P' || $delivery->status == 'C'){
+				return
+				"<button class = 'btn btn-info view_delivery' title = 'View'><span class = 'fa fa-eye'></span></button>
+				<button class = 'btn btn-primary edit_delivery' title = 'Edit'><span class = 'fa fa-edit'></span></button> 
+				<button class = 'btn but select-delivery' data-toggle = 'modal' data-target = '#deliveryModal' title = 'Status'><span class = 'fa-flag-o fa'></span></button>" . 
+				"<input type = 'hidden' value = '" . $delivery->id . "' class = 'delivery-id' />";
+			}
+			if($delivery->status == 'F'){
+				return
+				"<button class = 'btn btn-info view_delivery' title = 'View'><span class = 'fa fa-eye'></span></button>
+				<button disabled class = 'btn btn-primary edit_delivery' title = 'Edit'><span class = 'fa fa-edit'></span></button> 
+				<button disabled class = 'btn but select-delivery' data-toggle = 'modal' data-target = '#deliveryModal' title = 'Status'><span class = 'fa-flag-o fa'></span></button>" . 
+				"<input type = 'hidden' value = '" . $delivery->id . "' class = 'delivery-id' />";
+			}
 		})
 		->editColumn('status', function($deliveries){
 			switch ($deliveries->status) {
@@ -581,20 +640,210 @@ class DatatablesController extends Controller
 		$quotations = DB::table('quotation_headers')
 		->select(DB::raw('CONCAT(firstName, " ", lastName) as name'), 'quotation_headers.id', 'quotation_headers.created_at')
 		->join('consignees', 'consignees_id', '=', 'consignees.id')
+		->where('quotation_headers.deleted_at', '=', null)
 		->get();
 
 		return Datatables::of($quotations)
 		->editColumn('created_at', '{{ Carbon\Carbon::parse($created_at)->toFormattedDateString() }}')
 		->addColumn('action', function ($quotation){
 			return
-			'<button value = "'. $quotation->id .'" class = "btn btn-md but view">View</button>'.
-			'<button value = "'. $quotation->id .'" class = "btn btn-md btn-success print">Print</button>';
+			'<button value = "'. $quotation->id .'" class = "btn btn-md but view">View</button>
+			<button value = "'. $quotation->id .'" class = "btn btn-md btn-success print">Print</button>
+			<button value = "'. $quotation->id .'" class = "btn btn-md btn-danger archive">Archive</button>';
 		})
 		->editColumn('id', '{{ $id }}')
+
+		
 		->make(true);
 	}
 
-	//Utility Deactivate
+
+	public function get_active_contract(Request $request){
+		switch ($request->status) {
+			case "A" :
+			$contracts = DB::table('contract_headers')
+			->join('consignees AS A', 'consignees_id', '=', 'A.id')
+			->select('dateEffective', 'dateExpiration', DB::raw('CONCAT(firstName , " " , lastName) as name'), 'contract_headers.id', 'contract_headers.created_at')
+			->whereRaw('NOW() BETWEEN dateEffective AND dateExpiration')
+			->get();
+
+			return Datatables::of($contracts)
+			->addColumn('status', function ($contract_header){
+				$date_now = Carbon::now();
+				if($date_now->between(Carbon::parse($contract_header->dateEffective), Carbon::parse($contract_header->dateExpiration))){
+					return 'Active';
+				}
+				else if(Carbon::parse($contract_header->dateEffective)->isPast()){
+					return 'Expired';
+				}
+				else{
+					return 'Pending';
+				}
+
+			})
+
+			->editColumn('dateExpiration', '{{ Carbon\Carbon::parse($dateExpiration)->diffForHumans() }}')
+			->editColumn('dateEffective', '{{ Carbon\Carbon::parse($dateEffective)->toFormattedDateString() }}')
+			->make(true);
+			break;
+
+			case "E" :
+			$contracts = DB::table('contract_headers')
+			->join('consignees AS A', 'consignees_id', '=', 'A.id')
+			->select('dateEffective', 'dateExpiration', DB::raw('CONCAT(firstName , " " , lastName) as name'), 'contract_headers.id', 'contract_headers.created_at')
+			->whereRaw('NOW() > dateExpiration')
+			->get();
+
+			return Datatables::of($contracts)
+			->addColumn('status', function ($contract_header){
+				$date_now = Carbon::now();
+				if($date_now->between(Carbon::parse($contract_header->dateEffective), Carbon::parse($contract_header->dateExpiration))){
+					return 'Active';
+				}
+				else if(Carbon::parse($contract_header->dateEffective)->isPast()){
+					return 'Expired';
+				}
+				else{
+					return 'Pending';
+				}
+
+			})
+
+			->editColumn('dateExpiration', '{{ Carbon\Carbon::parse($dateExpiration)->diffForHumans() }}')
+			->editColumn('dateEffective', '{{ Carbon\Carbon::parse($dateEffective)->toFormattedDateString() }}')
+			->make(true);
+			break;
+
+			case "D" :
+			$contracts = DB::table('contract_headers')
+			->join('consignees AS A', 'consignees_id', '=', 'A.id')
+			->select('dateEffective', 'dateExpiration', DB::raw('CONCAT(firstName , " " , lastName) as name'), 'contract_headers.id', 'contract_headers.created_at')
+			->where('isFinalize', '=', 1)
+			->get();
+
+			return Datatables::of($contracts)
+			->addColumn('status', function ($contract_header){
+				$date_now = Carbon::now();
+				if($date_now->between(Carbon::parse($contract_header->dateEffective), Carbon::parse($contract_header->dateExpiration))){
+					return 'Active';
+				}
+				else if(Carbon::parse($contract_header->dateEffective)->isPast()){
+					return 'Expired';
+				}
+				else{
+					return 'Pending';
+				}
+
+			})
+
+			->editColumn('dateExpiration', '{{ Carbon\Carbon::parse($dateExpiration)->diffForHumans() }}')
+			->editColumn('dateEffective', '{{ Carbon\Carbon::parse($dateEffective)->toFormattedDateString() }}')
+			->make(true);
+			break;
+
+		}
+		
+	}
+
+	public function get_pending_deliveries(Request $request){
+		switch($request->status)
+		{
+			case 'P' :
+			$deliveries = DB::table('delivery_receipt_headers')
+			->select('delivery_receipt_headers.id', DB::raw('CONCAT(firstName, " ", lastName) as name'), 'pickupDateTime', 'deliveryDateTime', 'G.name as city_name', 'H.name as province_name', 'I.name as dcity_name', 'J.name as dprovince_name', 'plateNumber')
+			->join('trucking_service_orders AS A', 'delivery_receipt_headers.tr_so_id', '=', 'A.id')
+			->join('consignee_service_order_details AS B', 'A.so_details_id', '=', 'B.id')
+			->join('consignee_service_order_headers AS C', 'B.so_headers_id', '=', 'C.id')
+			->join('consignees AS D', 'C.consignees_id', '=', 'D.id')
+			->join('locations AS E', 'delivery_receipt_headers.locations_id_pick', 'E.id')
+			->join('locations AS F', 'delivery_receipt_headers.locations_id_del', 'F.id')
+			->join('location_cities as G', 'E.cities_id', 'G.id')
+			->join('location_provinces AS H', 'G.provinces_id', 'H.id')
+			->join('location_cities as I', 'F.cities_id', 'I.id')
+			->join('location_cities as J', 'I.provinces_id', 'J.id')
+			->where('delivery_receipt_headers.status', '=', 'P')
+			->get();
+
+			return Datatables::of($deliveries)
+			->addColumn('action', function ($delivery){
+				return
+				'<button value = "'. $delivery->id .'" class = "btn btn-md but view">View</button>';
+			})
+			->editColumn('deliveryDateTime', '{{ Carbon\Carbon::parse($deliveryDateTime)->toFormattedDateString() }}')
+			->editColumn('pickupDateTime', '{{ Carbon\Carbon::parse($pickupDateTime)->toFormattedDateString() }}')
+
+			->make(true);
+
+			break;
+
+			case 'C' :
+
+			$deliveries = DB::table('delivery_receipt_headers')
+			->select('delivery_receipt_headers.id', DB::raw('CONCAT(firstName, " ", lastName) as name'), 'pickupDateTime', 'deliveryDateTime', 'G.name as city_name', 'H.name as province_name', 'I.name as dcity_name', 'J.name as dprovince_name', 'plateNumber')
+			->join('trucking_service_orders AS A', 'delivery_receipt_headers.tr_so_id', '=', 'A.id')
+			->join('consignee_service_order_details AS B', 'A.so_details_id', '=', 'B.id')
+			->join('consignee_service_order_headers AS C', 'B.so_headers_id', '=', 'C.id')
+			->join('consignees AS D', 'C.consignees_id', '=', 'D.id')
+			->join('locations AS E', 'delivery_receipt_headers.locations_id_pick', 'E.id')
+			->join('locations AS F', 'delivery_receipt_headers.locations_id_del', 'F.id')
+			->join('location_cities as G', 'E.cities_id', 'G.id')
+			->join('location_provinces AS H', 'G.provinces_id', 'H.id')
+			->join('location_cities as I', 'F.cities_id', 'I.id')
+			->join('location_cities as J', 'I.provinces_id', 'J.id')
+			->where('delivery_receipt_headers.status', '=', 'C')
+			->get();
+
+			return Datatables::of($deliveries)
+			->addColumn('action', function ($delivery){
+				return
+				'<button value = "'. $delivery->id .'" class = "btn btn-md but view">View</button>';
+			})
+			->editColumn('deliveryDateTime', '{{ Carbon\Carbon::parse($deliveryDateTime)->toFormattedDateString() }}')
+			->editColumn('pickupDateTime', '{{ Carbon\Carbon::parse($pickupDateTime)->toFormattedDateString() }}')
+
+			->make(true);
+
+			break;
+
+			case 'T' :
+
+			$deliveries = DB::table('delivery_receipt_headers')
+			->select('delivery_receipt_headers.id', DB::raw('CONCAT(firstName, " ", lastName) as name'), 'pickupDateTime', 'deliveryDateTime', 'G.name as city_name', 'H.name as province_name', 'I.name as dcity_name', 'J.name as dprovince_name', 'plateNumber')
+			->join('trucking_service_orders AS A', 'delivery_receipt_headers.tr_so_id', '=', 'A.id')
+			->join('consignee_service_order_details AS B', 'A.so_details_id', '=', 'B.id')
+			->join('consignee_service_order_headers AS C', 'B.so_headers_id', '=', 'C.id')
+			->join('consignees AS D', 'C.consignees_id', '=', 'D.id')
+			->join('locations AS E', 'delivery_receipt_headers.locations_id_pick', 'E.id')
+			->join('locations AS F', 'delivery_receipt_headers.locations_id_del', 'F.id')
+			->join('location_cities as G', 'E.cities_id', 'G.id')
+			->join('location_provinces AS H', 'G.provinces_id', 'H.id')
+			->join('location_cities as I', 'F.cities_id', 'I.id')
+			->join('location_cities as J', 'I.provinces_id', 'J.id')
+			->where('delivery_receipt_headers.status', '=', 'P')
+			->whereRaw('DATE("deliveryDateTime") = DATE("CURDATE()")')
+			->get();
+
+			return Datatables::of($deliveries)
+			->addColumn('action', function ($delivery){
+				return
+				'<button value = "'. $delivery->id .'" class = "btn btn-md but view">View</button>';
+			})
+			->editColumn('deliveryDateTime', '{{ Carbon\Carbon::parse($deliveryDateTime)->toFormattedDateString() }}')
+			->editColumn('pickupDateTime', '{{ Carbon\Carbon::parse($pickupDateTime)->toFormattedDateString() }}')
+
+			->make(true);
+
+			break;
+		}
+		
+	}
+
+	public function get_unreturned_containers(Request $request){
+		$containers = DB::table('delivery_containers')
+		->select('containerNumber')
+		->where('containerReturnStatus', '=', 'N')
+		->get();
+	}
 
 	public function cds_datatable(){
 		$cdss = CdsFee::select(['id',  'fee', 'dateEffective', 'created_at']);
@@ -637,13 +886,15 @@ class DatatablesController extends Controller
 
 
 	public function sar_datatable(){
-		$ipfs = DB::select("SELECT h.id, h.dateEffective , GROUP_CONCAT(d.minimum ORDER BY d.minimum ASC ) AS minimum, GROUP_CONCAT(d.maximum ORDER BY d.minimum ASC ) AS maximum, GROUP_CONCAT(d.amount ORDER BY d.minimum ASC) AS amount FROM import_processing_fee_headers h INNER JOIN import_processing_fee_details d ON h.id = d.ipf_headers_id GROUP BY h.id");
+		$sars = DB::select("select s.id , f.id as'pickup_id', l.id as 'deliver_id', l.name as 'areaTo' ,f.name as 'areaFrom' ,s.amount from standard_area_rates s  JOIN locations as l on s.areaTo = l.id join locations as f on s.areaFrom = f.id  where s.deleted_at is null and l.deleted_at is null");
 
-		return Datatables::of($ipfs)
-		->addColumn('action', function ($ipf){
+		return Datatables::of($sars)
+		->addColumn('action', function ($sar){
 			return
-			'<button value = "'. $ipf->id .'" style="margin-right:10px;" class = "btn btn-md but edit">Update</button>'.
-			'<button value = "'. $ipf->id .'" class = "btn btn-md btn-danger deactivate">Deactivate</button>';
+			'<button value = "'. $sar->id .'" style="margin-right:10px;" class = "btn btn-md but edit">Update</button>'.
+			'<button value = "'. $sar->id .'" class = "btn btn-md btn-danger deactivate">Deactivate</button>'.
+			'<input type = "hidden" value = "'. $sar->pickup_id .'" class = "pickup_id"/>
+			<input type = "hidden" value = "'. $sar->deliver_id .'"class = "deliver_id"/>';
 		})
 		->editColumn('id', '{{ $id }}')
 		->make(true);
