@@ -10,7 +10,7 @@ class ImportProcessingFeeDetail extends Model
 	use SoftDeletes;
 
     protected $fillable = [
-	'minimum', 'maximum', 'amount',  'import_processing_fee_headers_id', 
+	'minimum', 'maximum', 'amount',  'ipf_headers_id', 
 	];
 
 	protected $dates = [
