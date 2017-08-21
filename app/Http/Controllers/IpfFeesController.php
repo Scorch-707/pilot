@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\IpfFee;
 use App\Http\Requests\StoreIPFFee;
+use App\ImportProcessingFeeHeader;
+use App\ImportProcessingFeeDetail;
 
 
 class IpfFeesController extends Controller
