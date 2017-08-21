@@ -27,7 +27,7 @@
                             <td>
                                 Brokerage Fee Amount
                             </td>
-                            
+
                             <td>
                                 Actions
                             </td>
@@ -51,7 +51,7 @@
                             <button type="button" class="close" data-dismiss="modal">&times;</button>
                             <h4 class="modal-title">New Brokerage Fee Range</h4>
                         </div>
-                        <div class="modal-body ">       
+                        <div class="modal-body ">
                             <div class="form-group required">
                                 <label class="control-label " for="dateEffective">Date Effective:</label>
                                 <input type="date" class="form-control" name = "dateEffective" id="dateEffective" placeholder="Enter Effective Date" data-rule-required="true">
@@ -102,7 +102,7 @@
 
                                                     <div class = "form-group input-group" >
                                                         <span class = "input-group-addon">$</span>
-                                                        <input type = "text" class = "form-control money bf_minimum_valid"  
+                                                        <input type = "text" class = "form-control money bf_minimum_valid"
                                                         value ="0.00" name = "minimum" id = "minimum"  data-rule-required="true" readonly="true"  />
                                                     </div>
 
@@ -110,7 +110,7 @@
                                                 <td>
                                                     <div class = "form-group input-group">
                                                         <span class = "input-group-addon">$</span>
-                                                        <input type = "text" class = "form-control money bf_maximum_valid"  
+                                                        <input type = "text" class = "form-control money bf_maximum_valid"
                                                         value ="0.00" name = "maximum" id = "maximum"  data-rule-required="true" />
                                                     </div>
                                                 </td>
@@ -118,7 +118,7 @@
                                                 <td>
                                                     <div class = "form-group input-group " >
                                                         <span class = "input-group-addon">Php</span>
-                                                        <input type = "text" class = "form-control money amount_valid"  
+                                                        <input type = "text" class = "form-control money amount_valid"
                                                         value ="0.00" name = "amount" id = "amount"  data-rule-required="true" />
                                                     </div>
 
@@ -139,7 +139,7 @@
                         </div>
                         <div class="modal-footer">
                             <button id = "btnSave" type = "submit" class="btn btn-success finalize-bf">Save</button>
-                            <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>           
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -203,13 +203,13 @@
     var maximum_id_descrp = [];
     var amount_value_descrp = [];
 
+    var data, tblLength;
+    var jsonMinimum, jsonMaximum, jsonAmount;
 
-
-    var data;
     $(document).ready(function(){
         var bf_row = "<tr>" + $('#bf-row').html() + "</tr>";
 
-        
+
         //$(minimum).attr("disabled", true);
 
         var bftable = $('#bf_table').DataTable({
@@ -243,16 +243,16 @@
         });
 
         $("#commentForm").validate({
-            rules: 
+            rules:
             {
                 dateEffective:
                 {
                     required: true,
                 },
 
-                
+
             },
-            onkeyup: false, 
+            onkeyup: false,
             submitHandler: function (form) {
                 return false;
             }
@@ -267,9 +267,9 @@
             for(var i = 0; i < (data.minimum).length; i++){
                 $('#minimum').val(data.minimum);
                 $('#maximum').val(data.maximum);
-                $('#amount').val(data.amount); 
+                $('#amount').val(data.amount);
             }
-            
+
             $('.modal-title').text('Update Brokerage Fee Range');
             $('#bfModal').modal('show');
         });
@@ -401,19 +401,22 @@
                 var title = $('.modal-title').text();
                 if(title == "New Brokerage Fee Range")
                 {
-                    console.log('min' + minimum_id);    
-                    console.log(maximum_id);    
+
+                  jsonMinimum = JSON.stringify(minimum_id);
+                  jsonMaximum = JSON.stringify(maximum_id);
+                  jsonAmount = JSON.stringify(amount_value);
+
+
                     $.ajax({
                         type: 'POST',
                         url:  '/admin/brokerage_fee',
                         data: {
                             '_token' : $('input[name=_token]').val(),
                             'dateEffective' : $('#dateEffective').val(),
-                            'minimum' : minimum_id,
-                            'maximum' :maximum_id,
-                            'minimum_id_descrp' : minimum_id_descrp,
-                            'maximum_id_descrp' : maximum_id_descrp,
-                            'amount' : amount_value,
+                            'minimum' : jsonMinimum,
+                            'maximum' : jsonMaximum,
+                            'amount' : jsonAmount,
+                            'tblLength' : tblLength,
                         },
 
                         success: function (data){
@@ -424,7 +427,7 @@
                             $('#bfModal').modal('hide');
                             $('.modal-title').text('New Brokerage Fee Range');
                             $('#minimum').val("0.00");
-                            $('#maximum').val("0.00"); 
+                            $('#maximum').val("0.00");
                             $('#amount').val("0.00");
                             $('#dateEffective').val("");
 
@@ -448,7 +451,7 @@
                                 "hideMethod": "fadeOut"
                             }
                             toastr["success"]("Record addded successfully")
-                            
+
                         }
                     })
                 }
@@ -478,12 +481,13 @@ function validatebfRows()
     amount =  document.getElementsByName('amount');
     error = "";
 
+    var min, max;
     if(dateEffective === ""){
 
-        dateEffective.style.borderColor = 'red';    
+        dateEffective.style.borderColor = 'red';
         error += "Date Effective Required.";
 
-    } 
+    }
 
 
     for(var i = 0; i < minimum.length; i++){
@@ -529,12 +533,15 @@ function validatebfRows()
             error += "Same.";
         }
 
-        if(minimum[i].value>maximum[i].value){
+        min = parseFloat(minimum[i].value);
+        max = parseFloat(maximum[i].value);
+
+        if( min > max){
 
             maximum[i].style.borderColor = 'red';
             error += "Minimum is greater than maximum";
             $('#bf_warning').addClass('in');
-        }   
+        }
 
         pair = {
             minimum: minimum[i].value,
@@ -546,18 +553,17 @@ function validatebfRows()
     found= false;
     n=range_pairs.length;
 
-    for (i=0; i<n; i++) {                        
+    for (i=0; i<n; i++) {
         for (j=i+1; j<n; j++)
-        {              
+        {
             if (range_pairs[i].minimum === range_pairs[j].maximum && range_pairs[i].maximum === range_pairs[j].maximum){
                 found = true;
-                
+
                 maximum[i].style.borderColor = 'red';
 
-                minimum[j].style.borderColor = 'red';
                 maximum[j].style.borderColor = 'red';
             }
-        }   
+        }
     }
     if(found == true){
         error+= "Existing rate.";
@@ -565,6 +571,7 @@ function validatebfRows()
 
         //Final validation
         if(error.length == 0){
+
             return true;
         }
 
@@ -590,9 +597,10 @@ function validatebfRows()
         minimum = document.getElementsByName('minimum');
         maximum = document.getElementsByName('maximum');
         amount = document.getElementsByName('amount');
-        
+
         error = "";
 
+        var min, max;
         if($('#dateEffective').val() == ""){
 
             document.getElementById("dateEffective").style.borderColor = "red";
@@ -660,12 +668,14 @@ function validatebfRows()
                 $('#bf_warning').addClass('in');
             }
 
-            if(minimum[i].value>maximum[i].value){
+            min = parseFloat(minimum[i].value);
+            max = parseFloat(maximum[i].value);
+            if( min > max){
 
                 maximum[i].style.borderColor = 'red';
                 error += "Minimum is greater than maximum";
                 $('#bf_warning').addClass('in');
-            }   
+            }
             pair = {
                 minimum: minimum[i].value,
                 maximum: maximum[i].value
@@ -675,18 +685,18 @@ function validatebfRows()
         var i, j, n;
         found= false;
         n=range_pairs.length;
-        for (i=0; i<n; i++) {                        
+        for (i=0; i<n; i++) {
             for (j=i+1; j<n; j++)
-            {              
+            {
                 if (range_pairs[i].minimum === range_pairs[j].minimum && range_pairs[i].maximum === range_pairs[j].maximum){
                     found = true;
-                    
+
                     maximum[i].style.borderColor = 'red';
 
 
                     maximum[j].style.borderColor = 'red';
                 }
-            }   
+            }
         }
         if(found == true){
             error+= "Existing rate.";
@@ -694,6 +704,7 @@ function validatebfRows()
         }
 
         if(error.length == 0){
+            tblLength = minimum.length;
             return true;
         }
         else
