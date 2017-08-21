@@ -7,6 +7,8 @@ use App\BrokerageFeeHeader;
 use App\BrokerageFeeDetail;
 use App\Http\Requests\StoreBrokerageFee;
 use Illuminate\Support\Facades\DB;
+use App\BrokerageFeeHeader;
+use App\BrokerageFeeDetail;
 
 class BrokerageFeesController extends Controller
 {
@@ -18,18 +20,22 @@ class BrokerageFeesController extends Controller
     public function store(StoreBrokerageFee $request)
     {
 
-        $new_bf = new BrokerageFeeHeader;
+         $new_bf = new BrokerageFeeHeader;
         $new_bf->dateEffective = date_create($request->dateEffective);
         $new_bf->save();
 
+        $_minimum = json_decode(stripslashes($request->minimum), true);
+        $_maximum = json_decode(stripslashes($request->maximum), true);
+        $_amount = json_decode(stripslashes($request->amount), true);
 
-        for($i = 0; $i < count($request->minimum); $i++){
+        $tblRowLength = $request->tblLength;
+
+        for($i = 0; $i <  $tblRowLength; $i++){
             $bf_detail = new BrokerageFeeDetail;
-            $bf_detail->minimum = $request->minimum[$i];
-            $bf_detail->maximum = $request->maximum[$i];
-            $bf_detail->amount = $request->amount[$i];
-            
             $bf_detail->brokerage_fee_headers_id = $new_bf->id;
+            $bf_detail->minimum = $_minimum[$i];
+            $bf_detail->maximum = $_maximum[$i];
+            $bf_detail->amount = $_amount[$i];
             $bf_detail->save();
         }
 
